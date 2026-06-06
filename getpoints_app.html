@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>getpoints — SEC Examiner</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+  background: radial-gradient(circle at top, rgba(34,197,94,0.10), transparent 30%),
+              linear-gradient(180deg, #041320 0%, #081826 45%, #0b1b2b 100%);
+  min-height: 100vh; color: #e2e8f0; padding: 2rem 1rem;
+}
+.app { max-width: 720px; margin: 0 auto; }
+
+/* Header */
+.header { display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; }
+.header img { width: 52px; height: 52px; border-radius: 12px; }
+.header-text {}
+.logo {
+  font-size: 1.8rem; font-weight: 700;
+  background: linear-gradient(90deg, #22c55e, #86efac 72%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1; margin-bottom: 3px;
+}
+.subtitle { font-size: 13px; color: #64748b; }
+
+/* Usage counter */
+.usage-bar {
+  background: rgba(15,23,42,0.95); border-radius: 12px;
+  border: 1px solid rgba(148,163,184,0.1); padding: 10px 16px;
+  margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;
+}
+.usage-text { font-size: 13px; color: #475569; }
+.usage-count { font-size: 13px; font-weight: 600; color: #22c55e; }
+.usage-count.low { color: #f59e0b; }
+.usage-count.empty { color: #f87171; }
+
+/* Subject selector */
+.selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sel-btn {
+  font-size: 13px; padding: 7px 16px; border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.15);
+  background: rgba(15,23,42,0.6); color: #64748b; cursor: pointer; transition: all 0.15s;
+}
+.sel-btn:hover { border-color: rgba(34,197,94,0.3); color: #94a3b8; }
+.sel-btn.active {
+  background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.4);
+  color: #22c55e; font-weight: 600;
+}
+.level-row { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.level-row.visible { display: flex; }
+
+/* Input cards */
+.input-card {
+  background: rgba(15,23,42,0.95); border-radius: 20px;
+  border: 1px solid rgba(148,163,184,0.1); padding: 1.25rem; margin-bottom: 1rem;
+}
+.input-card label {
+  font-size: 12px; color: #475569; display: block; margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+}
+textarea {
+  width: 100%; font-size: 15px; font-family: inherit;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.1);
+  border-radius: 12px; padding: 14px; color: #e2e8f0; resize: vertical; line-height: 1.7;
+}
+textarea:focus { outline: none; border-color: rgba(34,197,94,0.3); }
+textarea::placeholder { color: #334155; }
+#questionInput { min-height: 100px; }
+#answerInput { min-height: 140px; }
+
+/* Button */
+.mark-btn {
+  width: 100%; padding: 15px; font-size: 15px; font-weight: 700;
+  background: #22c55e; border: none; border-radius: 14px; color: #071013;
+  cursor: pointer; transition: all 0.15s;
+}
+.mark-btn:hover { background: #16a34a; transform: translateY(-1px); }
+.mark-btn:active { transform: scale(0.99); }
+.mark-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Paywall */
+.paywall {
+  margin-top: 1.25rem; background: rgba(15,23,42,0.98);
+  border-radius: 20px; border: 1px solid rgba(34,197,94,0.2);
+  padding: 2rem; text-align: center;
+}
+.paywall h2 { font-size: 1.4rem; color: #f8fafc; margin-bottom: 8px; }
+.paywall p { font-size: 14px; color: #64748b; margin-bottom: 1.5rem; }
+.price-tag {
+  font-size: 2.5rem; font-weight: 700;
+  background: linear-gradient(90deg, #22c55e, #86efac);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+.price-sub { font-size: 13px; color: #475569; margin-bottom: 1.5rem; }
+.promo-row { display: flex; gap: 8px; margin-bottom: 1rem; justify-content: center; }
+.promo-row input {
+  flex: 1; max-width: 220px; font-size: 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.15);
+  border-radius: 10px; padding: 10px 14px; color: #e2e8f0; text-transform: uppercase;
+}
+.promo-row input:focus { outline: none; border-color: rgba(34,197,94,0.3); }
+.promo-apply {
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 10px; color: #22c55e; cursor: pointer;
+}
+.promo-apply:hover { background: rgba(34,197,94,0.2); }
+.promo-msg { font-size: 13px; margin-bottom: 1rem; min-height: 20px; }
+.promo-msg.success { color: #22c55e; }
+.promo-msg.error { color: #f87171; }
+.pay-btn {
+  width: 100%; max-width: 320px; padding: 15px; font-size: 16px; font-weight: 700;
+  background: #22c55e; border: none; border-radius: 14px; color: #071013; cursor: pointer;
+  transition: all 0.15s; margin: 0 auto; display: block;
+}
+.pay-btn:hover { background: #16a34a; }
+.pay-note { font-size: 12px; color: #334155; margin-top: 12px; }
+
+/* Results */
+.result {
+  margin-top: 1.25rem; background: rgba(15,23,42,0.95);
+  border-radius: 20px; border: 1px solid rgba(148,163,184,0.1); overflow: hidden;
+}
+.result-header {
+  padding: 14px 20px; background: rgba(34,197,94,0.08);
+  border-bottom: 1px solid rgba(34,197,94,0.12);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.result-header span { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+.grade-pill {
+  font-size: 13px; font-weight: 700; padding: 5px 16px; border-radius: 999px;
+  background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.25);
+}
+.result-body { padding: 1.5rem; }
+.section { margin-bottom: 1.5rem; }
+.section:last-child { margin-bottom: 0; }
+.section-label {
+  font-size: 11px; font-weight: 700; color: #334155;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px;
+}
+.marks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.mark-card {
+  background: rgba(255,255,255,0.04); border-radius: 12px;
+  padding: 12px 14px; border: 1px solid rgba(148,163,184,0.08);
+}
+.mark-card .label { font-size: 11px; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
+.mark-card .value { font-size: 22px; font-weight: 700; color: #22c55e; }
+.mark-card .comment { font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.4; }
+.feedback-text { font-size: 14px; line-height: 1.8; color: #94a3b8; white-space: pre-wrap; }
+.error {
+  background: rgba(239,68,68,0.08); border-radius: 12px; padding: 12px 16px;
+  font-size: 14px; color: #f87171; margin-top: 1rem; border: 1px solid rgba(239,68,68,0.2);
+}
+.disclaimer { font-size: 11px; color: #1e293b; margin-top: 1.25rem; text-align: center; }
+.loading { display: flex; align-items: center; gap: 10px; padding: 2rem; color: #475569; font-size: 14px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 1.2s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%,80%,100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <img src="logo.png" alt="getpoints logo" id="logoImg" onerror="this.style.display='none'" />
+    <div class="header-text">
+      <div class="logo">getpoints.</div>
+      <p class="subtitle">Practice. Get Marked. Improve.</p>
+    </div>
+  </div>
+
+  <div class="usage-bar">
+    <span class="usage-text">Free questions used</span>
+    <span class="usage-count" id="usageCount">0 / 5</span>
+  </div>
+
+  <!-- Subject selector -->
+  <div class="selector-row" id="subjectRow">
+    <button class="sel-btn" onclick="selectSubject('Maths', this)">📐 Maths</button>
+    <button class="sel-btn" onclick="selectSubject('English', this)">📖 English</button>
+    <button class="sel-btn" onclick="selectSubject('Irish', this)">☘️ Irish</button>
+    <button class="sel-btn" onclick="selectSubject('Biology', this)">🧬 Biology</button>
+    <button class="sel-btn" onclick="selectSubject('Chemistry', this)">⚗️ Chemistry</button>
+    <button class="sel-btn" onclick="selectSubject('Physics', this)">⚡ Physics</button>
+    <button class="sel-btn" onclick="selectSubject('History', this)">📜 History</button>
+    <button class="sel-btn" onclick="selectSubject('Geography', this)">🌍 Geography</button>
+    <button class="sel-btn" onclick="selectSubject('Business', this)">💼 Business</button>
+    <button class="sel-btn" onclick="selectSubject('Accounting', this)">🧾 Accounting</button>
+    <button class="sel-btn" onclick="selectSubject('Economics', this)">📈 Economics</button>
+    <button class="sel-btn" onclick="selectSubject('French', this)">🇫🇷 French</button>
+    <button class="sel-btn" onclick="selectSubject('Spanish', this)">🇪🇸 Spanish</button>
+    <button class="sel-btn" onclick="selectSubject('German', this)">🇩🇪 German</button>
+    <button class="sel-btn" onclick="selectSubject('Art', this)">🎨 Art</button>
+    <button class="sel-btn" onclick="selectSubject('Music', this)">🎵 Music</button>
+    <button class="sel-btn" onclick="selectSubject('Home Economics', this)">🍳 Home Ec</button>
+    <button class="sel-btn" onclick="selectSubject('Agricultural Science', this)">🌾 Ag Science</button>
+    <button class="sel-btn" onclick="selectSubject('Technology', this)">🔧 Technology</button>
+    <button class="sel-btn" onclick="selectSubject('DCG', this)">📐 DCG</button>
+  </div>
+
+  <!-- Level selector -->
+  <div class="level-row" id="levelRow">
+    <button class="sel-btn" onclick="selectLevel('Higher Level', this)">Higher Level</button>
+    <button class="sel-btn" onclick="selectLevel('Ordinary Level', this)">Ordinary Level</button>
+    <button class="sel-btn back-btn" onclick="goBackToSubjects()" style="border-color:rgba(148,163,184,0.1);color:#334155;">← Back</button>
+  </div>
+
+  <!-- Inputs -->
+  <div id="inputSection" style="display:none;">
+    <div class="input-card">
+      <label>Question</label>
+      <textarea id="questionInput" placeholder="Paste the exam question here..."></textarea>
+    </div>
+    <div class="input-card">
+      <label>Your Answer</label>
+      <textarea id="answerInput" placeholder="Paste your written answer or working here..."></textarea>
+    </div>
+    <button class="mark-btn" onclick="markQuestion()" id="markBtn">Get the Points ↗</button>
+  </div>
+
+  <div id="result"></div>
+  <p class="disclaimer">Marking assistant only — not an official SEC solution.</p>
+</div>
+
+<script>
+const FREE_LIMIT = 5;
+const FULL_PRICE = 50;
+const PROMO_CODES = {
+  'GETPOINTS': 5,
+  'SPIKE': 10,
+  'FRIEND10': 10,
+  'EARLYBIRD': 10
+};
+
+let currentSubject = '';
+let currentLevel = '';
+let usageCount = parseInt(localStorage.getItem('gp_usage') || '0');
+let isPaid = localStorage.getItem('gp_paid') === 'true';
+
+function updateUsageBar() {
+  const el = document.getElementById('usageCount');
+  if (isPaid) {
+    el.textContent = '✓ Early Access';
+    el.className = 'usage-count';
+    return;
+  }
+  const remaining = FREE_LIMIT - usageCount;
+  el.textContent = `${usageCount} / ${FREE_LIMIT}`;
+  if (remaining <= 1) el.className = 'usage-count empty';
+  else if (remaining <= 2) el.className = 'usage-count low';
+  else el.className = 'usage-count';
+}
+
+function selectSubject(subject, btn) {
+  currentSubject = subject;
+  document.querySelectorAll('#subjectRow .sel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('subjectRow').style.display = 'none';
+  document.getElementById('levelRow').classList.add('visible');
+}
+
+function selectLevel(level, btn) {
+  currentLevel = level;
+  document.querySelectorAll('#levelRow .sel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('inputSection').style.display = 'block';
+}
+
+function goBackToSubjects() {
+  document.getElementById('subjectRow').style.display = 'flex';
+  document.getElementById('levelRow').classList.remove('visible');
+  document.getElementById('inputSection').style.display = 'none';
+  document.getElementById('result').innerHTML = '';
+  currentSubject = '';
+  currentLevel = '';
+}
+
+let currentPrice = FULL_PRICE;
+
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const msgEl = document.getElementById('promoMsg');
+  const payBtn = document.getElementById('payBtn');
+  const priceEl = document.getElementById('livePrice');
+
+  if (PROMO_CODES[code]) {
+    currentPrice = PROMO_CODES[code];
+    msgEl.textContent = `✓ Code applied! Price dropped to €${currentPrice}`;
+    msgEl.className = 'promo-msg success';
+    priceEl.textContent = `€${currentPrice}`;
+    payBtn.textContent = `Get Lifetime Access — €${currentPrice}`;
+  } else {
+    msgEl.textContent = 'Invalid code. Try again.';
+    msgEl.className = 'promo-msg error';
+  }
+}
+
+function showPaywall() {
+  document.getElementById('result').innerHTML = `
+    <div class="paywall">
+      <h2>You've used your 5 free questions 🎓</h2>
+      <p>Unlock unlimited access for the full Leaving Cert season — one payment, no subscription.</p>
+      <div class="price-tag" id="livePrice">€${FULL_PRICE}</div>
+      <div class="price-sub">Lifetime access · All subjects · Unlimited questions</div>
+      <div class="promo-row">
+        <input type="text" id="promoInput" placeholder="PROMO CODE" maxlength="20" />
+        <button class="promo-apply" onclick="applyPromo()">Apply</button>
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
+      <button class="pay-btn" id="payBtn" onclick="handlePayment()">Get Lifetime Access — €${FULL_PRICE}</button>
+      <p class="pay-note">Payment coming soon — join the waitlist at <strong>getpoints.up.railway.app</strong></p>
+    </div>`;
+}
+
+function handlePayment() {
+  alert(`Payment for €${currentPrice} — Stripe integration coming soon! Email harry@getpoints.ie to get early access now.`);
+}
+
+async function markQuestion() {
+  if (!isPaid && usageCount >= FREE_LIMIT) {
+    showPaywall();
+    return;
+  }
+
+  const question = document.getElementById('questionInput').value.trim();
+  const answer = document.getElementById('answerInput').value.trim();
+  const resultDiv = document.getElementById('result');
+  const btn = document.getElementById('markBtn');
+
+  if (!question || !answer) {
+    resultDiv.innerHTML = '<div class="error">Please fill in both the question and your answer.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Marking...';
+  resultDiv.innerHTML = '<div class="result"><div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Marking your answer...</span></div></div>';
+
+  try {
+    const response = await fetch('https://getpoints.up.railway.app/api/grade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: `QUESTION: ${question}\n\nSTUDENT ANSWER:\n${answer}`,
+        answer: answer
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      resultDiv.innerHTML = `<div class="error">Error: ${data.error || 'Something went wrong. Try again.'}</div>`;
+      return;
+    }
+
+    if (!isPaid) {
+      usageCount++;
+      localStorage.setItem('gp_usage', usageCount);
+      updateUsageBar();
+    }
+
+    const text = data.grading || '';
+
+    function extract(label, nextLabel) {
+      const regex = new RegExp(label + ':\\s*([\\s\\S]*?)(?=' + nextLabel + ':|$)');
+      const match = text.match(regex);
+      return match ? match[1].trim() : '';
+    }
+
+    const grade = extract('GRADE', 'TOTAL MARKS');
+    const totalMarks = extract('TOTAL MARKS', 'MARK BREAKDOWN');
+    const breakdown = extract('MARK BREAKDOWN', 'WORKED SOLUTION');
+    const solution = extract('WORKED SOLUTION', 'EXAMINER FEEDBACK');
+    const feedback = extract('EXAMINER FEEDBACK', 'COMMON MISTAKES');
+    const mistakes = extract('COMMON MISTAKES', 'ZZZNOMATCH');
+
+    const breakdownLines = breakdown.split('\n').filter(l => l.trim().startsWith('-'));
+    const breakdownHTML = breakdownLines.map(line => {
+      const clean = line.replace(/^[-\s]*/, '');
+      const parts = clean.split('—');
+      const left = parts[0] ? parts[0].trim() : clean;
+      const comment = parts[1] ? parts[1].trim() : '';
+      const colonIdx = left.indexOf(':');
+      const category = colonIdx > -1 ? left.substring(0, colonIdx).trim() : left;
+      const marks = colonIdx > -1 ? left.substring(colonIdx + 1).trim() : '';
+      return `<div class="mark-card"><div class="label">${category}</div><div class="value">${marks}</div><div class="comment">${comment}</div></div>`;
+    }).join('');
+
+    resultDiv.innerHTML = `
+      <div class="result">
+        <div class="result-header">
+          <span>Examiner Result — ${currentSubject} ${currentLevel}</span>
+          <span class="grade-pill">${grade} &nbsp;·&nbsp; ${totalMarks} marks</span>
+        </div>
+        <div class="result-body">
+          <div class="section">
+            <div class="section-label">Mark breakdown</div>
+            <div class="marks-grid">${breakdownHTML}</div>
+          </div>
+          <div class="section">
+            <div class="section-label">Worked solution</div>
+            <div class="feedback-text">${solution}</div>
+          </div>
+          <div class="section">
+            <div class="section-label">Examiner feedback</div>
+            <div class="feedback-text">${feedback}</div>
+          </div>
+          <div class="section">
+            <div class="section-label">Common mistakes</div>
+            <div class="feedback-text">${mistakes}</div>
+          </div>
+        </div>
+      </div>`;
+
+    if (!isPaid && usageCount >= FREE_LIMIT) {
+      setTimeout(showPaywall, 500);
+    }
+
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Get the Points ↗';
+  }
+}
+
+updateUsageBar();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>getpoints — SEC Examiner</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+  background: radial-gradient(circle at top, rgba(34,197,94,0.10), transparent 30%),
+              linear-gradient(180deg, #041320 0%, #081826 45%, #0b1b2b 100%);
+  min-height: 100vh; color: #e2e8f0; padding: 2rem 1rem;
+}
+.app { max-width: 720px; margin: 0 auto; }
+
+/* Header */
+.header { display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; }
+.header img { width: 52px; height: 52px; border-radius: 12px; }
+.header-text {}
+.logo {
+  font-size: 1.8rem; font-weight: 700;
+  background: linear-gradient(90deg, #22c55e, #86efac 72%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1; margin-bottom: 3px;
+}
+.subtitle { font-size: 13px; color: #64748b; }
+
+/* Usage counter */
+.usage-bar {
+  background: rgba(15,23,42,0.95); border-radius: 12px;
+  border: 1px solid rgba(148,163,184,0.1); padding: 10px 16px;
+  margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;
+}
+.usage-text { font-size: 13px; color: #475569; }
+.usage-count { font-size: 13px; font-weight: 600; color: #22c55e; }
+.usage-count.low { color: #f59e0b; }
+.usage-count.empty { color: #f87171; }
+
+/* Subject selector */
+.selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sel-btn {
+  font-size: 13px; padding: 7px 16px; border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.15);
+  background: rgba(15,23,42,0.6); color: #64748b; cursor: pointer; transition: all 0.15s;
+}
+.sel-btn:hover { border-color: rgba(34,197,94,0.3); color: #94a3b8; }
+.sel-btn.active {
+  background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.4);
+  color: #22c55e; font-weight: 600;
+}
+.level-row { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.level-row.visible { display: flex; }
+
+/* Input cards */
+.input-card {
+  background: rgba(15,23,42,0.95); border-radius: 20px;
+  border: 1px solid rgba(148,163,184,0.1); padding: 1.25rem; margin-bottom: 1rem;
+}
+.input-card label {
+  font-size: 12px; color: #475569; display: block; margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+}
+textarea {
+  width: 100%; font-size: 15px; font-family: inherit;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.1);
+  border-radius: 12px; padding: 14px; color: #e2e8f0; resize: vertical; line-height: 1.7;
+}
+textarea:focus { outline: none; border-color: rgba(34,197,94,0.3); }
+textarea::placeholder { color: #334155; }
+#questionInput { min-height: 100px; }
+#answerInput { min-height: 140px; }
+
+/* Button */
+.mark-btn {
+  width: 100%; padding: 15px; font-size: 15px; font-weight: 700;
+  background: #22c55e; border: none; border-radius: 14px; color: #071013;
+  cursor: pointer; transition: all 0.15s;
+}
+.mark-btn:hover { background: #16a34a; transform: translateY(-1px); }
+.mark-btn:active { transform: scale(0.99); }
+.mark-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Paywall */
+.paywall {
+  margin-top: 1.25rem; background: rgba(15,23,42,0.98);
+  border-radius: 20px; border: 1px solid rgba(34,197,94,0.2);
+  padding: 2rem; text-align: center;
+}
+.paywall h2 { font-size: 1.4rem; color: #f8fafc; margin-bottom: 8px; }
+.paywall p { font-size: 14px; color: #64748b; margin-bottom: 1.5rem; }
+.price-tag {
+  font-size: 2.5rem; font-weight: 700;
+  background: linear-gradient(90deg, #22c55e, #86efac);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+.price-sub { font-size: 13px; color: #475569; margin-bottom: 1.5rem; }
+.promo-row { display: flex; gap: 8px; margin-bottom: 1rem; justify-content: center; }
+.promo-row input {
+  flex: 1; max-width: 220px; font-size: 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.15);
+  border-radius: 10px; padding: 10px 14px; color: #e2e8f0; text-transform: uppercase;
+}
+.promo-row input:focus { outline: none; border-color: rgba(34,197,94,0.3); }
+.promo-apply {
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 10px; color: #22c55e; cursor: pointer;
+}
+.promo-apply:hover { background: rgba(34,197,94,0.2); }
+.promo-msg { font-size: 13px; margin-bottom: 1rem; min-height: 20px; }
+.promo-msg.success { color: #22c55e; }
+.promo-msg.error { color: #f87171; }
+.pay-btn {
+  width: 100%; max-width: 320px; padding: 15px; font-size: 16px; font-weight: 700;
+  background: #22c55e; border: none; border-radius: 14px; color: #071013; cursor: pointer;
+  transition: all 0.15s; margin: 0 auto; display: block;
+}
+.pay-btn:hover { background: #16a34a; }
+.pay-note { font-size: 12px; color: #334155; margin-top: 12px; }
+
+/* Results */
+.result {
+  margin-top: 1.25rem; background: rgba(15,23,42,0.95);
+  border-radius: 20px; border: 1px solid rgba(148,163,184,0.1); overflow: hidden;
+}
+.result-header {
+  padding: 14px 20px; background: rgba(34,197,94,0.08);
+  border-bottom: 1px solid rgba(34,197,94,0.12);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.result-header span { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+.grade-pill {
+  font-size: 13px; font-weight: 700; padding: 5px 16px; border-radius: 999px;
+  background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.25);
+}
+.result-body { padding: 1.5rem; }
+.section { margin-bottom: 1.5rem; }
+.section:last-child { margin-bottom: 0; }
+.section-label {
+  font-size: 11px; font-weight: 700; color: #334155;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px;
+}
+.marks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.mark-card {
+  background: rgba(255,255,255,0.04); border-radius: 12px;
+  padding: 12px 14px; border: 1px solid rgba(148,163,184,0.08);
+}
+.mark-card .label { font-size: 11px; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
+.mark-card .value { font-size: 22px; font-weight: 700; color: #22c55e; }
+.mark-card .comment { font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.4; }
+.feedback-text { font-size: 14px; line-height: 1.8; color: #94a3b8; white-space: pre-wrap; }
+.error {
+  background: rgba(239,68,68,0.08); border-radius: 12px; padding: 12px 16px;
+  font-size: 14px; color: #f87171; margin-top: 1rem; border: 1px solid rgba(239,68,68,0.2);
+}
+.disclaimer { font-size: 11px; color: #1e293b; margin-top: 1.25rem; text-align: center; }
+.loading { display: flex; align-items: center; gap: 10px; padding: 2rem; color: #475569; font-size: 14px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 1.2s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%,80%,100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <img src="logo.png" alt="getpoints logo" id="logoImg" onerror="this.style.display='none'" />
+    <div class="header-text">
+      <div class="logo">getpoints.</div>
+      <p class="subtitle">Practice. Get Marked. Improve.</p>
+    </div>
+  </div>
+
+  <div class="usage-bar">
+    <span class="usage-text">Free questions used</span>
+    <span class="usage-count" id="usageCount">0 / 5</span>
+  </div>
+
+  <!-- Subject selector -->
+  <div class="selector-row" id="subjectRow">
+    <button class="sel-btn" onclick="selectSubject('Maths', this)">📐 Maths</button>
+    <button class="sel-btn" onclick="selectSubject('English', this)">📖 English</button>
+    <button class="sel-btn" onclick="selectSubject('Irish', this)">☘️ Irish</button>
+    <button class="sel-btn" onclick="selectSubject('Biology', this)">🧬 Biology</button>
+    <button class="sel-btn" onclick="selectSubject('Chemistry', this)">⚗️ Chemistry</button>
+    <button class="sel-btn" onclick="selectSubject('Physics', this)">⚡ Physics</button>
+    <button class="sel-btn" onclick="selectSubject('History', this)">📜 History</button>
+    <button class="sel-btn" onclick="selectSubject('Geography', this)">🌍 Geography</button>
+    <button class="sel-btn" onclick="selectSubject('Business', this)">💼 Business</button>
+    <button class="sel-btn" onclick="selectSubject('Accounting', this)">🧾 Accounting</button>
+    <button class="sel-btn" onclick="selectSubject('Economics', this)">📈 Economics</button>
+    <button class="sel-btn" onclick="selectSubject('French', this)">🇫🇷 French</button>
+    <button class="sel-btn" onclick="selectSubject('Spanish', this)">🇪🇸 Spanish</button>
+    <button class="sel-btn" onclick="selectSubject('German', this)">🇩🇪 German</button>
+    <button class="sel-btn" onclick="selectSubject('Art', this)">🎨 Art</button>
+    <button class="sel-btn" onclick="selectSubject('Music', this)">🎵 Music</button>
+    <button class="sel-btn" onclick="selectSubject('Home Economics', this)">🍳 Home Ec</button>
+    <button class="sel-btn" onclick="selectSubject('Agricultural Science', this)">🌾 Ag Science</button>
+    <button class="sel-btn" onclick="selectSubject('Technology', this)">🔧 Technology</button>
+    <button class="sel-btn" onclick="selectSubject('DCG', this)">📐 DCG</button>
+  </div>
+
+  <!-- Level selector -->
+  <div class="level-row" id="levelRow">
+    <button class="sel-btn" onclick="selectLevel('Higher Level', this)">Higher Level</button>
+    <button class="sel-btn" onclick="selectLevel('Ordinary Level', this)">Ordinary Level</button>
+    <button class="sel-btn back-btn" onclick="goBackToSubjects()" style="border-color:rgba(148,163,184,0.1);color:#334155;">← Back</button>
+  </div>
+
+  <!-- Inputs -->
+  <div id="inputSection" style="display:none;">
+    <div class="input-card">
+      <label>Question</label>
+      <textarea id="questionInput" placeholder="Paste the exam question here..."></textarea>
+    </div>
+    <div class="input-card">
+      <label>Your Answer</label>
+      <textarea id="answerInput" placeholder="Paste your written answer or working here..."></textarea>
+    </div>
+    <button class="mark-btn" onclick="markQuestion()" id="markBtn">Get the Points ↗</button>
+  </div>
+
+  <div id="result"></div>
+  <p class="disclaimer">Marking assistant only — not an official SEC solution.</p>
+</div>
+
+<script>
+const FREE_LIMIT = 5;
+const FULL_PRICE = 50;
+const PROMO_CODES = {
+  'GETPOINTS': 5,
+  'SPIKE': 10,
+  'FRIEND10': 10,
+  'EARLYBIRD': 10
+};
+
+let currentSubject = '';
+let currentLevel = '';
+let usageCount = parseInt(localStorage.getItem('gp_usage') || '0');
+let isPaid = localStorage.getItem('gp_paid') === 'true';
+
+function updateUsageBar() {
+  const el = document.getElementById('usageCount');
+  if (isPaid) {
+    el.textContent = '✓ Early Access';
+    el.className = 'usage-count';
+    return;
+  }
+  const remaining = FREE_LIMIT - usageCount;
+  el.textContent = `${usageCount} / ${FREE_LIMIT}`;
+  if (remaining <= 1) el.className = 'usage-count empty';
+  else if (remaining <= 2) el.className = 'usage-count low';
+  else el.className = 'usage-count';
+}
+
+function selectSubject(subject, btn) {
+  currentSubject = subject;
+  document.querySelectorAll('#subjectRow .sel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('subjectRow').style.display = 'none';
+  document.getElementById('levelRow').classList.add('visible');
+}
+
+function selectLevel(level, btn) {
+  currentLevel = level;
+  document.querySelectorAll('#levelRow .sel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('inputSection').style.display = 'block';
+}
+
+function goBackToSubjects() {
+  document.getElementById('subjectRow').style.display = 'flex';
+  document.getElementById('levelRow').classList.remove('visible');
+  document.getElementById('inputSection').style.display = 'none';
+  document.getElementById('result').innerHTML = '';
+  currentSubject = '';
+  currentLevel = '';
+}
+
+let currentPrice = FULL_PRICE;
+
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const msgEl = document.getElementById('promoMsg');
+  const payBtn = document.getElementById('payBtn');
+  const priceEl = document.getElementById('livePrice');
+
+  if (PROMO_CODES[code]) {
+    currentPrice = PROMO_CODES[code];
+    msgEl.textContent = `✓ Code applied! Price dropped to €${currentPrice}`;
+    msgEl.className = 'promo-msg success';
+    priceEl.textContent = `€${currentPrice}`;
+    payBtn.textContent = `Get Lifetime Access — €${currentPrice}`;
+  } else {
+    msgEl.textContent = 'Invalid code. Try again.';
+    msgEl.className = 'promo-msg error';
+  }
+}
+
+function showPaywall() {
+  document.getElementById('result').innerHTML = `
+    <div class="paywall">
+      <h2>You've used your 5 free questions 🎓</h2>
+      <p>Unlock unlimited access for the full Leaving Cert season — one payment, no subscription.</p>
+      <div class="price-tag" id="livePrice">€${FULL_PRICE}</div>
+      <div class="price-sub">Lifetime access · All subjects · Unlimited questions</div>
+      <div class="promo-row">
+        <input type="text" id="promoInput" placeholder="PROMO CODE" maxlength="20" />
+        <button class="promo-apply" onclick="applyPromo()">Apply</button>
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
+      <button class="pay-btn" id="payBtn" onclick="handlePayment()">Get Lifetime Access — €${FULL_PRICE}</button>
+      <p class="pay-note">Payment coming soon — join the waitlist at <strong>getpoints.up.railway.app</strong></p>
+    </div>`;
+}
+
+function handlePayment() {
+  // TODO: integrate Stripe
+  alert(`Payment for €${currentPrice} — Stripe integration coming soon! Email harry@getpoints.ie to get early access now.`);
+}
+
+async function markQuestion() {
+  if (!isPaid && usageCount >= FREE_LIMIT) {
+    showPaywall();
+    return;
+  }
+
+  const question = document.getElementById('questionInput').value.trim();
+  const answer = document.getElementById('answerInput').value.trim();
+  const resultDiv = document.getElementById('result');
+  const btn = document.getElementById('markBtn');
+
+  if (!question || !answer) {
+    resultDiv.innerHTML = '<div class="error">Please fill in both the question and your answer.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Marking...';
+  resultDiv.innerHTML = '<div class="result"><div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Marking your answer...</span></div></div>';
+
+  try {
+    const response = await fetch('https://getpoints.up.railway.app/api/grade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: `QUESTION: ${question}\n\nSTUDENT ANSWER:\n${answer}`,
+        answer: answer
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      resultDiv.innerHTML = `<div class="error">Error: ${data.error || 'Something went wrong. Try again.'}</div>`;
+      return;
+    }
+
+    // Increment usage
+    if (!isPaid) {
+      usageCount++;
+      localStorage.setItem('gp_usage', usageCount);
+      updateUsageBar();
+    }
+
+    const text = data.grading || '';
+
+    function extract(label, nextLabel) {
+      const regex = new RegExp(label + ':\\s*([\\s\\S]*?)(?=' + nextLabel + ':|$)');
+      const match = text.match(regex);
+      return match ? match[1].trim() : '';
+    }
+
+    const grade = extract('GRADE', 'TOTAL MARKS');
+    const totalMarks = extract('TOTAL MARKS', 'MARK BREAKDOWN');
+    const breakdown = extract('MARK BREAKDOWN', 'WORKED SOLUTION');
+    const solution = extract('WORKED SOLUTION', 'EXAMINER FEEDBACK');
+    const feedback = extract('EXAMINER FEEDBACK', 'COMMON MISTAKES');
+    const mistakes = extract('COMMON MISTAKES', 'ZZZNOMATCH');
+
+    const breakdownLines = breakdown.split('\n').filter(l => l.trim().startsWith('-'));
+    const breakdownHTML = breakdownLines.map(line => {
+      const clean = line.replace(/^[-\s]*/, '');
+      const parts = clean.split('—');
+      const left = parts[0] ? parts[0].trim() : clean;
+      const comment = parts[1] ? parts[1].trim() : '';
+      const colonIdx = left.indexOf(':');
+      const category = colonIdx > -1 ? left.substring(0, colonIdx).trim() : left;
+      const marks = colonIdx > -1 ? left.substring(colonIdx + 1).trim() : '';
+      return `<div class="mark-card"><div class="label">${category}</div><div class="value">${marks}</div><div class="comment">${comment}</div></div>`;
+    }).join('');
+
+    resultDiv.innerHTML = `
+      <div class="result">
+        <div class="result-header">
+          <span>Examiner Result — ${currentSubject} ${currentLevel}</span>
+          <span class="grade-pill">${grade} &nbsp;·&nbsp; ${totalMarks} marks</span>
+        </div>
+        <div class="result-body">
+          <div class="section">
+            <div class="section-label">Mark breakdown</div>
+            <div class="marks-grid">${breakdownHTML}</div>
+          </div>
+          <div class="section">
+            <div class="section-label">Worked solution</div>
+            <div class="feedback-text">${solution}</div>
+          </div>
+          <div class="section">
+            <div class="section-label">Examiner feedback</div>
+            <div class="feedback-text">${feedback}</div>
+          </div>
+          <div class="section">
+            <div class="section-label">Common mistakes</div>
+            <div class="feedback-text">${mistakes}</div>
+          </div>
+        </div>
+      </div>`;
+
+    // Show paywall after last free question
+    if (!isPaid && usageCount >= FREE_LIMIT) {
+      setTimeout(showPaywall, 500);
+    }
+
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Get the Points ↗';
+  }
+}
+
+updateUsageBar();
+</script>
+</body>
+</html>
