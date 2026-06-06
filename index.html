@@ -99,3 +99,24 @@
   </div>
 </body>
 </html>
+
+<script>
+  // Backend base URL (Railway)
+  const BACKEND_BASE = "https://getpoints.up.railway.app";
+
+  async function grade(question, answer) {
+    const resp = await fetch(`${BACKEND_BASE}/api/grade`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, answer })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => null);
+      throw new Error(err?.error || 'Grade request failed');
+    }
+    return resp.json();
+  }
+
+  // Example usage (open console and run):
+  // grade('Differentiate x^2', '2x').then(r=>console.log(r)).catch(e=>console.error(e));
+</script>
