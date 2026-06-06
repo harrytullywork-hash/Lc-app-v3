@@ -130,7 +130,8 @@ h1 {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 16, 27, 0.96));
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(148, 163, 184, 0.16);
-  max-width: 960px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
 }
 
