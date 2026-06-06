@@ -1,6 +1,7 @@
 
-# Ignore backend and local environment files
-getpoints-backend/
+# Ignore local environment files
 *.pyc
 __pycache__/
 .DS_Store
+# Ignore backend secrets only
+getpoints-backend/.env
