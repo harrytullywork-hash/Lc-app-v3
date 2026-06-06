@@ -1,0 +1,6 @@
+
+# Ignore backend and local environment files
+getpoints-backend/
+*.pyc
+__pycache__/
+.DS_Store
